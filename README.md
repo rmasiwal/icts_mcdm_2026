@@ -6,7 +6,7 @@ A config-driven Python package to compute and visualise climatological monsoon o
 
 ## Features
 
-- **Dataset-agnostic**: works with any NetCDF dataset (IMD 2°, IMD 4°, ERA5, CMIP6, etc.) via YAML config files
+- **Dataset-agnostic**: works with any NetCDF dataset (IMD 1°, ERA5, CMIP6, etc.) via YAML config files
 - **Flexible dimension mapping**: handles any naming convention (`lat`/`latitude`/`LATITUDE`, `tp`/`RAINFALL`, etc.)
 - **Unit conversion**: built-in scale factor support (e.g. ERA5 metres → mm)
 - **Configurable onset algorithm**: wet-spell window, dry-spell veto, MOK filter — all adjustable per config
@@ -19,8 +19,8 @@ A config-driven Python package to compute and visualise climatological monsoon o
 ```
 icts_mcdm_2026/
 ├── configs/
-│   ├── imd_2deg.yaml          # IMD 2-degree config
-│   ├── imd_4deg.yaml          # IMD 4-degree config
+│   ├── imd_1deg.yaml          # IMD 1-degree config
+│   ├── imerg_1deg.yaml        # IMERG 1-degree config
 │   └── era5.yaml              # ERA5 config (example)
 ├── monsoon_onset/
 │   ├── __init__.py
@@ -28,8 +28,6 @@ icts_mcdm_2026/
 │   ├── detector.py            # Onset detection algorithm
 │   ├── climatology.py         # Multi-year + climatological onset
 │   └── plotter.py             # Onset map plotting
-├── notebooks/
-│   └── example_imd_2deg.ipynb # Example notebook
 ├── output/                    # Auto-created: NetCDF + figures saved here
 ├── run_onset.py               # CLI entry point
 ├── requirements.txt
@@ -52,17 +50,18 @@ pip install -r requirements.txt
 
 ### 1. Edit the config file
 
-Edit `configs/imd_2deg.yaml` to point to your data:
+Edit `configs/imd_1deg.yaml` to point to your data:
 
 ```yaml
 dataset:
-  data_folder: "/path/to/your/imd_2deg_folder"
-  threshold_file: "/path/to/mwset2x2.nc4"
+  data_folder: "/path/to/your/imd_1deg_folder"
+  threshold_file: "/path/to/mwset1x1.nc4"
   file_pattern: "data_{year}.nc"
   precip_var: "RAINFALL"
   dim_mapping:
-    latitude: "lat"
-    longitude: "lon"
+    LATITUDE: "lat"
+    LONGITUDE: "lon"
+    TIME: "time"
 
 onset:
   wet_spell_window: 5
@@ -72,20 +71,20 @@ onset:
 
 years:
   start: 1901
-  end: 2024
+  end: 2025
 ```
 
 ### 2. Run from command line
 
 ```bash
 # Use defaults from config
-python run_onset.py --config configs/imd_2deg.yaml
+python run_onset.py --config configs/imd_1deg.yaml
 
 # Override years
 python run_onset.py --config configs/era5.yaml --start_year 1979 --end_year 2024
 
 # Custom output dir
-python run_onset.py --config configs/imd_4deg.yaml --output_dir /path/to/results
+python run_onset.py --config configs/imd_1deg.yaml --output_dir /path/to/results
 ```
 
 ### 3. Use as a Python library
@@ -100,7 +99,7 @@ from monsoon_onset import (
 )
 
 # Load config
-with open("configs/imd_2deg.yaml") as f:
+with open("configs/imd_1deg.yaml") as f:
     cfg = yaml.safe_load(f)
 
 # Load threshold

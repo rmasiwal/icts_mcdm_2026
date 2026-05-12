@@ -1,0 +1,46 @@
+# Configuration for IMD 1-degree resolution rainfall dataset
+dataset:
+  name: "IMD_1deg"
+  description: "India Meteorological Department gridded rainfall at 1-degree resolution (1901-2025)"
+
+  # Paths
+  data_folder: "/Users/Rajat/Library/CloudStorage/OneDrive-TheUniversityofChicago/documents/conferences/icts_monsoon_26/mr_onset/data/imd"
+  threshold_file: "/Users/Rajat/Library/CloudStorage/OneDrive-TheUniversityofChicago/documents/conferences/icts_monsoon_26/mr_onset/data/mwset1x1.nc4"
+
+  # File naming pattern: use {year} as placeholder
+  file_pattern: "data_{year}.nc"
+
+  # Variable name for precipitation in the NetCDF file
+  precip_var: "RAINFALL"
+
+  # Dimension name mappings: map your dataset's dim names -> standard (lat, lon, time)
+  # IMD uses uppercase dimension names
+  dim_mapping:
+    LONGITUDE: "lon"
+    LATITUDE: "lat"
+    TIME: "time"
+
+  # Threshold variable name in the threshold file
+  threshold_var: "MWmean"
+
+# Onset detection parameters
+onset:
+  start_month: 4           # Start month for onset detection (April = 4)
+  start_day: 1             # Start day for onset detection
+  wet_spell_window: 5      # Window (days) for wet spell detection
+  dry_spell_window: 10     # Window (days) for dry spell detection
+  dry_spell_threshold: 5   # mm total rainfall threshold for dry spell
+  dry_spell_check_days: 30 # Days after onset to check for dry spell
+  min_first_day_rain: 1    # Minimum rainfall on first day of wet spell (mm)
+  mok: false               # Apply MOK (Monsoon Onset Kerala) June 2 filter
+
+# Years to process
+years:
+  start: 1901
+  end: 2025
+
+# Output
+output:
+  save_nc: true
+  output_dir: "./output"
+  filename_prefix: "onset_imd_1deg"

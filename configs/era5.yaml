@@ -1,0 +1,42 @@
+# Configuration for ERA5 reanalysis dataset (example for a different data structure)
+dataset:
+  name: "ERA5"
+  description: "ECMWF ERA5 reanalysis daily total precipitation"
+
+  data_folder: "/path/to/era5_folder"
+  threshold_file: "/path/to/era5_threshold.nc"
+
+  # ERA5 typically stored as one file per year
+  file_pattern: "era5_precip_{year}.nc"
+
+  # ERA5 uses 'tp' for total precipitation (in metres - will be converted)
+  precip_var: "tp"
+
+  # ERA5 uses standard names already
+  dim_mapping:
+    latitude: "lat"
+    longitude: "lon"
+
+  threshold_var: "threshold"
+
+  # Unit conversion: ERA5 tp is in metres/day -> mm/day
+  precip_unit_scale: 1000.0  # multiply by 1000
+
+onset:
+  start_month: 4
+  start_day: 1
+  wet_spell_window: 5
+  dry_spell_window: 10
+  dry_spell_threshold: 5
+  dry_spell_check_days: 30
+  min_first_day_rain: 1
+  mok: false
+
+years:
+  start: 1979
+  end: 2024
+
+output:
+  save_nc: true
+  output_dir: "./output"
+  filename_prefix: "onset_era5"

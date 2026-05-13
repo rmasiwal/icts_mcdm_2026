@@ -19,6 +19,9 @@ dataset:
   # Threshold variable name in the threshold file
   threshold_var: "MWmean"
 
+  # Path to India boundary shapefile (.shp) for map outlines
+  shapefile: "/Users/Rajat/Library/CloudStorage/OneDrive-TheUniversityofChicago/documents/conferences/icts_monsoon_26/mr_onset/data/ind_map_shpfile/india_shapefile.shp"
+
 # Onset detection parameters
 onset:
   start_month: 4           # Start month for onset detection (April = 4)
@@ -38,5 +41,6 @@ years:
 # Output
 output:
   save_nc: true
+  save_csv: true
   output_dir: "./output"
   filename_prefix: "onset_era5_1deg"

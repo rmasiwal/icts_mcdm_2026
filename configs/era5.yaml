@@ -19,8 +19,11 @@ dataset:
 
   threshold_var: "threshold"
 
+  # Path to India boundary shapefile (.shp) for map outlines
+  shapefile: "/path/to/shapefiles/India_boundary.shp"
+
   # Unit conversion: ERA5 tp is in metres/day -> mm/day
-  precip_unit_scale: 1000.0  # multiply by 1000
+  precip_unit_scale: 1.0  # multiply by 1000 if not already converted to mm/day
 
 onset:
   start_month: 4

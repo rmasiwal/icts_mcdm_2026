@@ -8,3 +8,12 @@ __pycache__/
 dist/
 build/
 .env
+# Large / proprietary data files — do not commit
+data/*.nc
+data/*.nc4
+data/*.h5
+data/*.hdf5
+data/*.grb
+data/*.grib
+# But DO track the bundled shapefile
+!data/shapefiles/

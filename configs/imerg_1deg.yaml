@@ -38,5 +38,6 @@ years:
 # Output
 output:
   save_nc: true
+  save_csv: true
   output_dir: "./output"
   filename_prefix: "onset_imerg_1deg"

@@ -4,16 +4,6 @@ A config-driven Python package to compute and visualise climatological monsoon o
 
 ---
 
-## Features
-
-- **Dataset-agnostic**: works with any NetCDF dataset (IMD 1°, ERA5, CMIP6, etc.) via YAML config files
-- **Flexible dimension mapping**: handles any naming convention (`lat`/`latitude`/`LATITUDE`, `tp`/`RAINFALL`, etc.)
-- **Unit conversion**: built-in scale factor support (e.g. ERA5 metres → mm)
-- **Configurable onset algorithm**: wet-spell window, dry-spell veto, MOK filter — all adjustable per config
-- **Clean plotting**: discrete colourmap onset maps with optional forecast-cell outlines
-
----
-
 ## Repository Structure
 
 ```

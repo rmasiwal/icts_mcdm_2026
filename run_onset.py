@@ -42,6 +42,10 @@ def main():
                         help="Force save NetCDF output")
     parser.add_argument("--output_dir", default=None,
                         help="Override output directory from config")
+    parser.add_argument("--save_csv", action="store_true", default=False,
+                        help="Also save yearly onset dates as a CSV file")
+    parser.add_argument("--no_clim", action="store_true", default=False,
+                        help="Skip climatology computation and plot")
     args = parser.parse_args()
 
     # ── Load config ──────────────────────────────────────────────────────────
@@ -86,18 +90,42 @@ def main():
         onset_dataset.to_netcdf(nc_path)
         print(f"Saved multi-year onset dataset: {nc_path}")
 
-    # ── Compute climatology ───────────────────────────────────────────────────
-    clim_doy, clim_onset_date, valid_count = compute_climatological_onset(onset_dataset)
+    # ── Save CSV ──────────────────────────────────────────────────────────────
+    # One row per (year, lat, lon) with onset_date and onset_doy columns
+    save_csv = args.save_csv or output_cfg.get("save_csv", False)
+    if save_csv:
+        import pandas as pd
+        prefix = output_cfg.get("filename_prefix", "onset")
+        sy = years_cfg["start"]
+        ey = years_cfg["end"]
 
-    # ── Plot ──────────────────────────────────────────────────────────────────
-    prefix = output_cfg.get("filename_prefix", "onset")
-    plot_path = os.path.join(output_dir, f"{prefix}_clim_map.pdf")
-    plot_climatological_onset(
-        clim_doy,
-        colormap="Blues",
-        title=f"Climatological Mean Monsoon Onset ({years_cfg['start']}–{years_cfg['end']})",
-        save_path=plot_path,
-    )
+        da = onset_dataset["onset_date"]
+        df = da.to_dataframe().reset_index()
+        df = df.dropna(subset=["onset_date"])
+        df["onset_date"] = pd.to_datetime(df["onset_date"])
+        df["onset_doy"] = df["onset_date"].dt.dayofyear
+        df["onset_date"] = df["onset_date"].dt.strftime("%Y-%m-%d")
+        df = df[["year", "lat", "lon", "onset_date", "onset_doy"]]
+        df = df.sort_values(["year", "lat", "lon"]).reset_index(drop=True)
+
+        csv_path = os.path.join(output_dir, f"{prefix}_{sy}_{ey}.csv")
+        df.to_csv(csv_path, index=False)
+        print(f"Saved yearly onset CSV:          {csv_path}")
+        print(df.head(10))
+
+    # ── Compute climatology ───────────────────────────────────────────────────
+    if not args.no_clim:
+        clim_doy, clim_onset_date, valid_count = compute_climatological_onset(onset_dataset)
+
+        # ── Plot ──────────────────────────────────────────────────────────────
+        prefix = output_cfg.get("filename_prefix", "onset")
+        plot_path = os.path.join(output_dir, f"{prefix}_clim_map.pdf")
+        plot_climatological_onset(
+            clim_doy,
+            colormap="Blues",
+            title=f"Climatological Mean Monsoon Onset ({years_cfg['start']}–{years_cfg['end']})",
+            save_path=plot_path,
+        )
 
     print("\nAll done.")
 

@@ -9,36 +9,51 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 from matplotlib.colors import BoundaryNorm
-from matplotlib.gridspec import GridSpec
 from matplotlib.patches import Rectangle
 import xarray as xr
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def doy_to_date_string(doy: float) -> str:
-    """Convert day-of-year float to 'mm/dd' string using year 2000 as reference."""
-    date = pd.Timestamp("2000-01-01") + pd.Timedelta(days=int(doy) - 1)
+def doy_to_date_string(doy: float, year: int = 2001) -> str:
+    """Convert day-of-year float to 'mm/dd' string.
+
+    Parameters
+    ----------
+    doy : float
+        Day-of-year (1-based).
+    year : int, optional
+        Reference year used to interpret the DOY. Defaults to 2001 (a
+        non-leap year) so that DOY values from non-leap years like 2025
+        map correctly. Pass the actual data year when the year matters.
+    """
+    date = pd.Timestamp(f"{year}-01-01") + pd.Timedelta(days=int(doy) - 1)
     return date.strftime("%m/%d")
 
 
-def get_india_outline(shapefile_path: str = None):
+def get_india_outline(shapefile_path: str = None, dataset_cfg: dict = None):
     """
     Load India boundary from a shapefile, or fall back to a bounding box.
 
     Parameters
     ----------
     shapefile_path : str, optional
-        Path to an India shapefile (.shp).
+        Direct path to an India shapefile (.shp).
+    dataset_cfg : dict, optional
+        Dataset config dict (from YAML). If ``shapefile_path`` is not given,
+        the key ``dataset_cfg["shapefile"]`` is used as the path.
 
     Returns
     -------
     list of (lon_coords, lat_coords) tuples
     """
-    if shapefile_path:
+    # Resolve path: explicit arg takes priority, then config dict
+    path = shapefile_path or (dataset_cfg.get("shapefile") if dataset_cfg else None)
+
+    if path:
         try:
             import geopandas as gpd
-            gdf = gpd.read_file(shapefile_path)
+            gdf = gpd.read_file(path)
             boundaries = []
             for geom in gdf.geometry:
                 polys = [geom] if hasattr(geom, "exterior") else list(geom.geoms)
@@ -47,7 +62,7 @@ def get_india_outline(shapefile_path: str = None):
                     boundaries.append(
                         ([c[0] for c in coords], [c[1] for c in coords])
                     )
-            print(f"Loaded India outline from: {shapefile_path}")
+            print(f"Loaded India outline from: {path}")
             return boundaries
         except Exception as e:
             print(f"Could not load shapefile: {e}. Using fallback outline.")
@@ -134,11 +149,7 @@ def plot_climatological_onset(
 
     # ── Figure layout ────────────────────────────────────────────────────────
     SMALL = 8
-    fig = plt.figure(figsize=(6, 6), dpi=dpi)
-    gs = GridSpec(1, 14, figure=fig,
-                  hspace=0.1, wspace=0.3,
-                  left=0.08, right=0.92, top=0.85, bottom=0.15)
-    ax = fig.add_subplot(gs[0, 0:12])
+    fig, ax = plt.subplots(figsize=(6, 6), dpi=dpi)
 
     im = ax.pcolormesh(LON_e, LAT_e, masked_data,
                        cmap=cmap_obj, norm=norm, shading="flat")
@@ -157,36 +168,38 @@ def plot_climatological_onset(
             )
             ax.add_patch(rect)
 
-    # Axes ticks / limits
-    ax.set_xlim([lon[0] - 2, 100])
-    ax.set_ylim([lat[0] - 2, lat[-1]])
-    yticks = np.arange(lat[0] - 2, lat[-1] + 3, 8)
+    # Axes ticks / limits — set to exact outer cell edges so spines sit outside pixels
+    ax.set_xlim(lon_edges[0], lon_edges[-1])
+    ax.set_ylim(lat_edges[0], lat_edges[-1])
+    yticks = np.arange(np.ceil(lat[0] / 8) * 8, lat[-1] + 1, 8)
     ax.set_yticks(yticks)
     ax.set_yticklabels([f"{int(y)}°N" for y in yticks], fontsize=SMALL)
-    xticks = np.arange(lon[0] - 2, lon[-1] + 3, 8)
+    xticks = np.arange(np.ceil(lon[0] / 8) * 8, lon[-1] + 1, 8)
     ax.set_xticks(xticks)
     ax.set_xticklabels([f"{int(x)}°E" for x in xticks], fontsize=SMALL)
+    ax.tick_params(length=3, width=0.6)
 
     if title:
         ax.set_title(title, fontsize=9, fontweight="bold", pad=6)
 
-    ax.set_aspect("equal", adjustable="box")
+    # datalim: aspect ratio adjusts the data range, not the axes box size
+    ax.set_aspect("equal", adjustable="datalim")
     ax.grid(False)
-    for side in ["top", "right", "bottom", "left"]:
-        ax.spines[side].set_linewidth(0.5)
 
-    # Colorbar
-    pos = ax.get_position()
-    cb_h = pos.height * 0.7
-    cax = fig.add_axes([pos.x1 + 0.01,
-                         pos.y0 + (pos.height - cb_h) / 2,
-                         0.025, cb_h])
-    cbar = fig.colorbar(im, cax=cax, orientation="vertical", spacing="proportional")
+    # Thin spine at outer cell edges
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(0.6)
+
+    # Colorbar — attached to ax so no orphan frame is left behind
+    cbar = fig.colorbar(im, ax=ax, orientation="vertical",
+                        pad=0.02, shrink=0.85, spacing="proportional")
     tick_pos = boundaries[::2]
     cbar.set_ticks(tick_pos)
     cbar.set_ticklabels([doy_to_date_string(t) for t in tick_pos])
     cbar.ax.tick_params(labelsize=SMALL, length=2, width=1)
     cbar.ax.minorticks_off()
+    cbar.outline.set_visible(False)
 
     plt.tight_layout()
 
